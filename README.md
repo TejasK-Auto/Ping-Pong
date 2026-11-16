@@ -1,40 +1,47 @@
-# Memory Game
+# Browser Mini-Games
 
-A responsive and accessible Memory (Concentration) card game built with HTML, CSS, and JavaScript.
+This repository contains two responsive, standalone browser games built with plain HTML, CSS, and JavaScript. No build step, external library, or network connection is required to play.
 
-## Features
+## Games
 
-- 4x4 and 6x6 grid options
-- Smooth card flip animations
-- Timer and moves counter
-- Star rating system
-- Local storage for best scores
-- Keyboard controls for accessibility
-- Responsive design for all devices
-- No external dependencies
+### Memory Game
 
-## How to Play
+Open `memory-game.html` to play. Choose a 4x4 or 6x6 board and find all matching emoji pairs.
 
-1. Open `memory-game.html` in a web browser
-2. Click or use keyboard (Tab + Enter/Space) to flip cards
-3. Find matching pairs to win
-4. Try to complete the game with as few moves as possible
-5. Switch between 4x4 and 6x6 grids using the buttons
+- Mouse and keyboard play (Tab, then Enter or Space)
+- Move counter, timer, and star rating
+- Best five scores saved in browser local storage
+- Optional dark theme; your theme choice is saved in browser local storage
 
-## Technical Details
+### Pong
 
-- Pure HTML, CSS, and JavaScript implementation
-- No external libraries or dependencies
-- Fully responsive design using CSS Grid
-- Accessible with ARIA attributes and keyboard controls
-- Local storage for persistent high scores
+Open `pong.html` to play. The first player to score seven points wins.
 
-## Development
+- **1 Player:** Move the left paddle with W/S and play against the computer.
+- **2 Players:** Player 1 uses W/S; Player 2 uses the Up/Down arrow keys.
+- **Touch screens:** Use the on-screen paddle controls.
+- Focus the playfield and press Space to pause or resume. Use the match buttons to start or restart.
+- Move a paddle over a glowing pickup to collect its power-up. The game includes Big Paddle, Paddle Boost, Slow Ball, Speed Ball, Curve Ball, Shield, and Shrink Opponent.
 
-1. Clone the repository
-2. Open `memory-game.html` in a web browser
-3. Or serve using a local HTTP server:
-   ```bash
-   python3 -m http.server 8000
-   ```
-4. Visit `http://localhost:8000/memory-game.html`
+The Pong computer opponent uses intentionally imperfect tracking. Open the in-game power-up guide for descriptions of the collectibles.
+
+## Run locally
+
+You can open either HTML file directly in a modern browser. Or serve the repository directory with Python:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open one of these URLs:
+
+- `http://localhost:8000/memory-game.html`
+- `http://localhost:8000/pong.html`
+
+## Project files
+
+- `memory-game.html` - Memory game
+- `pong.html` - Pong
+- `PRD_dark_theme.md` - Memory game dark theme requirements
+- `PRD_pong.md` - Pong requirements
+- `context.md` - Repository overview

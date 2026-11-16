@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1324">
+    <title>Pong</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #eef4ff;
+            background: #0d1324;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 8px 16px;
+            background:
+                radial-gradient(ellipse at 50% 35%, rgba(35, 70, 130, 0.24), transparent 60%),
+                #0d1324;
+        }
+
+        button {
+            min-height: 44px;
+            padding: 0.65rem 1rem;
+            border: 1px solid #45618d;
+            border-radius: 8px;
+            background: #1b2a46;
+            color: #eef4ff;
+            font: inherit;
+            font-weight: 650;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+        }
+
+        button:hover {
+            background: #263c62;
+            border-color: #7aa8f8;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:focus-visible {
+            outline: 3px solid #91b9ff;
+            outline-offset: 3px;
+        }
+
+        button[aria-pressed="true"],
+        button.primary {
+            background: #2865cf;
+            border-color: #79a7ff;
+        }
+
+        button[aria-pressed="true"]:hover,
+        button.primary:hover {
+            background: #3478e8;
+        }
+
+        .app {
+            width: min(100%, 960px);
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 5vw, 3rem);
+            letter-spacing: 0.12em;
+            line-height: 1.1;
+        }
+
+        header p {
+            margin: 0.2rem 0 0;
+            color: #b7c7e2;
+        }
+
+        .mode-picker,
+        .match-controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .mode-picker {
+            margin: 8px 0 6px;
+        }
+
+        .mode-picker button,
+        .match-controls button {
+            min-height: 38px;
+            padding: 0.4rem 0.85rem;
+        }
+
+        .scoreboard {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            max-width: 520px;
+            margin: 0 auto 5px;
+            text-align: center;
+        }
+
+        .player-score {
+            display: grid;
+            gap: 2px;
+        }
+
+        .player-name {
+            color: #b7c7e2;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .score {
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            font-variant-numeric: tabular-nums;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .score-divider {
+            padding: 0 20px;
+            color: #587196;
+            font-size: 1.7rem;
+        }
+
+        .game-status {
+            min-height: 1.2em;
+            margin: 0 0 4px;
+            color: #c8d8f2;
+            text-align: center;
+        }
+
+        .powerup-status,
+        .active-effects {
+            min-height: 1.2em;
+            margin: 0 0 2px;
+            color: #c7d7f0;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        .active-effects {
+            color: #9eb2d1;
+        }
+
+        .game-board {
+            overflow: hidden;
+            width: min(100%, max(300px, calc(177.78vh - 750px)));
+            margin: 0 auto;
+            border: 1px solid #29446f;
+            border-radius: 14px;
+            background: #101c32;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+        }
+
+        .match-controls {
+            margin: 8px 0 10px;
+        }
+
+        .paddle-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .paddle-controls[hidden] {
+            display: none;
+        }
+
+        .player-pad {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border: 1px solid #243b60;
+            border-radius: 12px;
+            background: rgba(25, 41, 68, 0.72);
+        }
+
+        .player-pad[hidden] {
+            display: none;
+        }
+
+        .pad-label {
+            grid-column: 1 / -1;
+            color: #b7c7e2;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .direction-button {
+            min-width: 0;
+            padding: 0.7rem 0.4rem;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        .instructions {
+            margin: 8px auto 0;
+            color: #9eb2d1;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .powerup-guide {
+            max-width: 720px;
+            margin: 8px auto 0;
+            padding: 8px 12px;
+            border: 1px solid #243b60;
+            border-radius: 12px;
+            background: rgba(25, 41, 68, 0.55);
+            color: #c7d7f0;
+        }
+
+        .powerup-guide summary {
+            color: #eef4ff;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .powerup-guide ul {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 5px 20px;
+            margin: 8px 0 0;
+            padding-left: 20px;
+            font-size: 0.82rem;
+        }
+
+        @media (min-width: 700px) and (hover: hover) {
+            .paddle-controls {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 18px 12px;
+            }
+
+            .mode-picker button,
+            .match-controls button {
+                flex: 1 1 135px;
+            }
+
+            .paddle-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .powerup-guide ul {
+                grid-template-columns: 1fr;
+            }
+
+            .game-board {
+                width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <header>
+            <h1>PONG</h1>
+            <p>A quick rally. First to 7 wins.</p>
+        </header>
+
+        <section class="mode-picker" aria-label="Game mode">
+            <button type="button" class="mode-button" data-mode="single" aria-pressed="true">1 Player</button>
+            <button type="button" class="mode-button" data-mode="two" aria-pressed="false">2 Players</button>
+        </section>
+
+        <section class="scoreboard" aria-label="Match score" aria-live="polite">
+            <div class="player-score">
+                <span class="player-name" id="left-name">You</span>
+                <span class="score" id="left-score">0</span>
+            </div>
+            <span class="score-divider" aria-hidden="true">:</span>
+            <div class="player-score">
+                <span class="player-name" id="right-name">Computer</span>
+                <span class="score" id="right-score">0</span>
+            </div>
+        </section>
+
+        <p class="game-status" id="game-status" role="status" aria-live="polite">Select Start Game when you are ready.</p>
+        <p class="powerup-status" id="powerup-status" role="status" aria-live="polite">Move your paddle over floating power-ups to collect them.</p>
+        <p class="active-effects" id="active-effects" aria-label="Active power-ups">No active power-ups.</p>
+
+        <div class="game-board">
+            <canvas id="game" width="960" height="540" role="img" tabindex="0" aria-label="Pong playfield. Move your paddle with W and S."></canvas>
+        </div>
+
+        <section class="match-controls" aria-label="Match controls">
+            <button type="button" class="primary" id="start-button">Start Game</button>
+            <button type="button" id="pause-button" hidden>Pause</button>
+            <button type="button" id="restart-button">Restart</button>
+        </section>
+
+        <section class="paddle-controls" aria-label="Touch paddle controls">
+            <div class="player-pad">
+                <span class="pad-label">Player 1 / You</span>
+                <button type="button" class="direction-button" data-control="left-up" aria-label="Move left paddle up">UP</button>
+                <button type="button" class="direction-button" data-control="left-down" aria-label="Move left paddle down">DOWN</button>
+            </div>
+            <div class="player-pad" id="right-pad" hidden>
+                <span class="pad-label">Player 2</span>
+                <button type="button" class="direction-button" data-control="right-up" aria-label="Move right paddle up">UP</button>
+                <button type="button" class="direction-button" data-control="right-down" aria-label="Move right paddle down">DOWN</button>
+            </div>
+        </section>
+
+        <p class="instructions" id="instructions">
+            W/S moves Player 1; Up/Down moves Player 2. Focus the playfield and press Space to pause.<br>
+            Move your paddle over glowing power-ups to collect them. Touch controls appear on smaller screens.
+        </p>
+
+        <details class="powerup-guide">
+            <summary>Power-up guide</summary>
+            <ul>
+                <li><strong>Big Paddle:</strong> enlarge your paddle temporarily.</li>
+                <li><strong>Paddle Boost:</strong> move your paddle faster temporarily.</li>
+                <li><strong>Slow Ball:</strong> slow the ball for both players.</li>
+                <li><strong>Speed Ball:</strong> speed up the ball for both players.</li>
+                <li><strong>Curve Ball:</strong> bend the ball's path temporarily.</li>
+                <li><strong>Shield:</strong> block one goal against you.</li>
+                <li><strong>Shrink Opponent:</strong> shrink the other player's paddle temporarily.</li>
+            </ul>
+        </details>
+    </main>
+
+    <script>
+        const canvas = document.querySelector('#game');
+        const context = canvas.getContext('2d');
+        const elements = {
+            leftName: document.querySelector('#left-name'),
+            rightName: document.querySelector('#right-name'),
+            leftScore: document.querySelector('#left-score'),
+            rightScore: document.querySelector('#right-score'),
+            status: document.querySelector('#game-status'),
+            powerupStatus: document.querySelector('#powerup-status'),
+            activeEffects: document.querySelector('#active-effects'),
+            start: document.querySelector('#start-button'),
+            pause: document.querySelector('#pause-button'),
+            restart: document.querySelector('#restart-button'),
+            rightPad: document.querySelector('#right-pad'),
+            modeButtons: document.querySelectorAll('.mode-button')
+        };
+
+        const game = {
+            mode: 'single',
+            status: 'ready',
+            leftScore: 0,
+            rightScore: 0,
+            leftY: canvas.height / 2,
+            rightY: canvas.height / 2,
+            paddleWidth: 14,
+            paddleHeight: 112,
+            ballX: canvas.width / 2,
+            ballY: canvas.height / 2,
+            ballRadius: 9,
+            ballVX: 410,
+            ballVY: 0,
+            serveAt: 0,
+            lastFrame: 0,
+            animationId: null,
+            input: new Set(),
+            clock: 0,
+            lastEffectDisplay: -1,
+            nextPowerupAt: 0,
+            powerup: null,
+            ballEffect: { type: null, until: 0, curveDirection: 1 },
+            paddleEffects: {
+                left: { bigUntil: 0, boostUntil: 0, shrinkUntil: 0, shield: false },
+                right: { bigUntil: 0, boostUntil: 0, shrinkUntil: 0, shield: false }
+            }
+        };
+
+        const paddleInset = 36;
+        const targetScore = 7;
+        const paddleSpeed = 450;
+        const powerups = {
+            big: { name: 'Big Paddle', glyph: 'B', color: '#62e6a7' },
+            boost: { name: 'Paddle Boost', glyph: '>', color: '#62d8ff' },
+            slow: { name: 'Slow Ball', glyph: 'S', color: '#b7a0ff' },
+            fast: { name: 'Speed Ball', glyph: 'F', color: '#ffb454' },
+            curve: { name: 'Curve Ball', glyph: 'C', color: '#ff7eb6' },
+            shield: { name: 'Shield', glyph: 'H', color: '#ffe66d' },
+            shrink: { name: 'Shrink Opponent', glyph: '-', color: '#a8e66b' }
+        };
+
+        function getPaddleHeight(side) {
+            const effects = game.paddleEffects[side];
+            const isBig = effects.bigUntil > game.clock;
+            const isShrunk = effects.shrinkUntil > game.clock;
+            const scale = (isBig ? 1.5 : 1) * (isShrunk ? 0.65 : 1);
+            return Math.max(40, game.paddleHeight * scale);
+        }
+
+        function limitPaddle(y, side) {
+            const halfHeight = getPaddleHeight(side) / 2;
+            return Math.max(halfHeight, Math.min(canvas.height - halfHeight, y));
+        }
+
+        function ballSpeedFactor(type) {
+            if (type === 'slow') return 0.72;
+            if (type === 'fast') return 1.28;
+            return 1;
+        }
+
+        function changeBallEffect(type, duration) {
+            const oldFactor = ballSpeedFactor(game.ballEffect.type);
+            game.ballEffect = {
+                type,
+                until: type ? game.clock + duration : 0,
+                curveDirection: Math.random() < 0.5 ? -1 : 1
+            };
+            const speedChange = ballSpeedFactor(type) / oldFactor;
+            game.ballVX *= speedChange;
+            game.ballVY *= speedChange;
+        }
+
+        function resetBall(direction) {
+            const speedFactor = ballSpeedFactor(game.ballEffect.type);
+            game.ballX = canvas.width / 2;
+            game.ballY = canvas.height / 2;
+            game.ballVX = direction * (390 + Math.random() * 45) * speedFactor;
+            game.ballVY = (Math.random() * 2 - 1) * 190 * speedFactor;
+            game.serveAt = performance.now() + 650;
+        }
+
+        function updateActiveEffects() {
+            const labels = game.mode === 'single'
+                ? { left: 'You', right: 'Computer' }
+                : { left: 'Player 1', right: 'Player 2' };
+            const active = [];
+
+            ['left', 'right'].forEach(side => {
+                const effects = game.paddleEffects[side];
+                const sideEffects = [];
+                if (effects.bigUntil > game.clock) {
+                    sideEffects.push(`Big Paddle ${Math.ceil(effects.bigUntil - game.clock)}s`);
+                }
+                if (effects.boostUntil > game.clock) {
+                    sideEffects.push(`Paddle Boost ${Math.ceil(effects.boostUntil - game.clock)}s`);
+                }
+                if (effects.shrinkUntil > game.clock) {
+                    sideEffects.push(`Shrunk ${Math.ceil(effects.shrinkUntil - game.clock)}s`);
+                }
+                if (effects.shield) sideEffects.push('Shield x1');
+                if (sideEffects.length) active.push(`${labels[side]}: ${sideEffects.join(', ')}`);
+            });
+
+            if (game.ballEffect.type && game.ballEffect.until > game.clock) {
+                active.push(`${powerups[game.ballEffect.type].name} ${Math.ceil(game.ballEffect.until - game.clock)}s`);
+            }
+            elements.activeEffects.textContent = active.length
+                ? `Active power-ups - ${active.join(' | ')}`
+                : 'No active power-ups.';
+            game.lastEffectDisplay = Math.floor(game.clock);
+        }
+
+        function renderInterface() {
+            const isPlaying = game.status === 'playing';
+            const labels = game.mode === 'single'
+                ? { left: 'You', right: 'Computer' }
+                : { left: 'Player 1', right: 'Player 2' };
+
+            elements.leftName.textContent = labels.left;
+            elements.rightName.textContent = labels.right;
+            elements.leftScore.textContent = game.leftScore;
+            elements.rightScore.textContent = game.rightScore;
+            elements.rightPad.hidden = game.mode !== 'two';
+            elements.pause.hidden = !isPlaying;
+            elements.start.hidden = isPlaying || game.status === 'won';
+            elements.start.textContent = game.status === 'paused' ? 'Resume' : 'Start Game';
+            canvas.setAttribute(
+                'aria-label',
+                game.mode === 'single'
+                    ? 'Pong playfield. Move your paddle with W and S.'
+                    : 'Pong playfield. Player 1 uses W and S; Player 2 uses the Up and Down arrow keys.'
+            );
+            elements.modeButtons.forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.mode === game.mode));
+            });
+
+            if (game.status === 'ready') {
+                elements.status.textContent = 'Select Start Game when you are ready.';
+            } else if (isPlaying) {
+                elements.status.textContent = game.mode === 'single'
+                    ? 'Playing - move with W and S.'
+                    : 'Playing - Player 1: W/S. Player 2: Up/Down.';
+            } else if (game.status === 'paused') {
+                elements.status.textContent = 'Paused. Select Resume or press Space.';
+            } else if (game.status === 'won') {
+                const winner = game.leftScore === targetScore ? labels.left : labels.right;
+                elements.status.textContent = `${winner} wins! Select Restart to play again.`;
+            }
+            updateActiveEffects();
+        }
+
+        function draw() {
+            const width = canvas.width;
+            const height = canvas.height;
+
+            context.clearRect(0, 0, width, height);
+            context.fillStyle = '#101c32';
+            context.fillRect(0, 0, width, height);
+
+            context.fillStyle = 'rgba(147, 177, 225, 0.48)';
+            for (let y = 16; y < height; y += 34) {
+                context.fillRect(width / 2 - 2, y, 4, 17);
+            }
+
+            if (game.powerup) {
+                const item = powerups[game.powerup.type];
+                const x = game.powerup.side === 'left'
+                    ? paddleInset + game.paddleWidth / 2
+                    : width - paddleInset - game.paddleWidth / 2;
+                const pulse = 1 + Math.sin(performance.now() / 170) * 0.08;
+                context.fillStyle = item.color;
+                context.shadowColor = item.color;
+                context.shadowBlur = 22;
+                context.beginPath();
+                context.arc(x, game.powerup.y, 18 * pulse, 0, Math.PI * 2);
+                context.fill();
+                context.shadowBlur = 0;
+                context.fillStyle = '#101c32';
+                context.font = 'bold 15px system-ui, sans-serif';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(item.glyph, x, game.powerup.y);
+            }
+
+            context.fillStyle = '#8bb5ff';
+            context.shadowColor = 'rgba(92, 151, 255, 0.55)';
+            context.shadowBlur = 18;
+            context.beginPath();
+            context.roundRect(
+                paddleInset,
+                game.leftY - getPaddleHeight('left') / 2,
+                game.paddleWidth,
+                getPaddleHeight('left'),
+                game.paddleWidth / 2
+            );
+            context.fill();
+            context.beginPath();
+            context.roundRect(
+                width - paddleInset - game.paddleWidth,
+                game.rightY - getPaddleHeight('right') / 2,
+                game.paddleWidth,
+                getPaddleHeight('right'),
+                game.paddleWidth / 2
+            );
+            context.fill();
+
+            context.fillStyle = game.ballEffect.type === 'curve' ? '#ff7eb6' : '#f2f7ff';
+            context.beginPath();
+            context.arc(game.ballX, game.ballY, game.ballRadius, 0, Math.PI * 2);
+            context.fill();
+            context.shadowBlur = 0;
+        }
+
+        function movePaddles(delta) {
+            let leftDirection = 0;
+            let rightDirection = 0;
+
+            if (game.input.has('w') || game.input.has('left-up')) leftDirection -= 1;
+            if (game.input.has('s') || game.input.has('left-down')) leftDirection += 1;
+            if (game.mode === 'two') {
+                if (game.input.has('arrowup') || game.input.has('right-up')) rightDirection -= 1;
+                if (game.input.has('arrowdown') || game.input.has('right-down')) rightDirection += 1;
+            }
+
+            const leftSpeed = paddleSpeed * (game.paddleEffects.left.boostUntil > game.clock ? 1.7 : 1);
+            game.leftY = limitPaddle(game.leftY + leftDirection * leftSpeed * delta, 'left');
+
+            if (game.mode === 'two') {
+                const rightSpeed = paddleSpeed * (game.paddleEffects.right.boostUntil > game.clock ? 1.7 : 1);
+                game.rightY = limitPaddle(game.rightY + rightDirection * rightSpeed * delta, 'right');
+            } else {
+                    const aiSpeed = 155 * (game.paddleEffects.right.boostUntil > game.clock ? 1.7 : 1);
+                const targetY = game.ballVX > 0
+                        ? game.ballY + Math.sin(game.clock * 1.8) * 68
+                    : canvas.height / 2;
+                const trackingError = targetY - game.rightY;
+                game.rightY = limitPaddle(
+                    game.rightY + Math.max(-aiSpeed * delta, Math.min(aiSpeed * delta, trackingError)),
+                    'right'
+                );
+            }
+        }
+
+        function setPowerupMessage(message) {
+            elements.powerupStatus.textContent = message;
+        }
+
+        function resetPowerups() {
+            game.paddleEffects = {
+                left: { bigUntil: 0, boostUntil: 0, shrinkUntil: 0, shield: false },
+                right: { bigUntil: 0, boostUntil: 0, shrinkUntil: 0, shield: false }
+            };
+            game.ballEffect = { type: null, until: 0, curveDirection: 1 };
+            game.powerup = null;
+            game.clock = 0;
+            game.lastEffectDisplay = -1;
+            game.nextPowerupAt = 3;
+            game.input.clear();
+            setPowerupMessage('Move your paddle over floating power-ups to collect them.');
+        }
+
+        function applyPowerup(type, side) {
+            const ownEffects = game.paddleEffects[side];
+            const opposingEffects = game.paddleEffects[side === 'left' ? 'right' : 'left'];
+            const playerName = game.mode === 'single'
+                ? 'You'
+                : side === 'left' ? 'Player 1' : 'Player 2';
+            const duration = 8;
+
+            if (type === 'big') ownEffects.bigUntil = game.clock + duration;
+            if (type === 'boost') ownEffects.boostUntil = game.clock + duration;
+            if (type === 'shrink') opposingEffects.shrinkUntil = game.clock + duration;
+            if (type === 'shield') ownEffects.shield = true;
+            if (type === 'slow' || type === 'fast' || type === 'curve') {
+                changeBallEffect(type, duration);
+            }
+            game.leftY = limitPaddle(game.leftY, 'left');
+            game.rightY = limitPaddle(game.rightY, 'right');
+
+            setPowerupMessage(`${playerName} collected ${powerups[type].name}.`);
+            updateActiveEffects();
+        }
+
+        function updatePowerups() {
+            if (!game.powerup && game.clock >= game.nextPowerupAt) {
+                const types = Object.keys(powerups);
+                const type = types[Math.floor(Math.random() * types.length)];
+                const side = game.mode === 'single' || Math.random() < 0.5 ? 'left' : 'right';
+                game.powerup = {
+                    type,
+                    side,
+                    y: 58 + Math.random() * (canvas.height - 116),
+                    expiresAt: game.clock + 8
+                };
+                const playerName = game.mode === 'single'
+                    ? 'your'
+                    : side === 'left' ? "Player 1's" : "Player 2's";
+                setPowerupMessage(`${powerups[type].name} is floating by ${playerName} paddle. Move into it to collect it.`);
+            }
+
+            if (!game.powerup) return;
+
+            if (game.clock >= game.powerup.expiresAt) {
+                const expiredName = powerups[game.powerup.type].name;
+                game.powerup = null;
+                game.nextPowerupAt = game.clock + 4;
+                setPowerupMessage(`${expiredName} drifted away. Watch for another pickup.`);
+                return;
+            }
+
+            const side = game.powerup.side;
+            const paddleY = side === 'left' ? game.leftY : game.rightY;
+            if (Math.abs(game.powerup.y - paddleY) <= getPaddleHeight(side) / 2 + 18) {
+                const collectedType = game.powerup.type;
+                game.powerup = null;
+                game.nextPowerupAt = game.clock + 4;
+                applyPowerup(collectedType, side);
+            }
+        }
+
+        function updateTimedEffects() {
+            ['left', 'right'].forEach(side => {
+                const effects = game.paddleEffects[side];
+                if (effects.bigUntil && effects.bigUntil <= game.clock) effects.bigUntil = 0;
+                if (effects.boostUntil && effects.boostUntil <= game.clock) effects.boostUntil = 0;
+                if (effects.shrinkUntil && effects.shrinkUntil <= game.clock) effects.shrinkUntil = 0;
+            });
+            game.leftY = limitPaddle(game.leftY, 'left');
+            game.rightY = limitPaddle(game.rightY, 'right');
+
+            if (game.ballEffect.type && game.ballEffect.until <= game.clock) {
+                changeBallEffect(null, 0);
+            }
+        }
+
+        function awardPoint(side) {
+            if (side === 'left') {
+                game.leftScore += 1;
+                resetBall(1);
+            } else {
+                game.rightScore += 1;
+                resetBall(-1);
+            }
+
+            if (game.leftScore >= targetScore || game.rightScore >= targetScore) {
+                game.status = 'won';
+                stopLoop();
+            }
+            renderInterface();
+        }
+
+        function updateBall(delta, now) {
+            if (now < game.serveAt) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const leftX = paddleInset + game.paddleWidth;
+            const rightX = width - paddleInset - game.paddleWidth;
+
+            if (game.ballEffect.type === 'curve') {
+                game.ballVY = Math.max(
+                    -500,
+                    Math.min(500, game.ballVY + game.ballEffect.curveDirection * 185 * delta)
+                );
+            }
+
+            game.ballX += game.ballVX * delta;
+            game.ballY += game.ballVY * delta;
+
+            if (game.ballY - game.ballRadius <= 0) {
+                game.ballY = game.ballRadius;
+                game.ballVY = Math.abs(game.ballVY);
+            } else if (game.ballY + game.ballRadius >= height) {
+                game.ballY = height - game.ballRadius;
+                game.ballVY = -Math.abs(game.ballVY);
+            }
+
+            const leftHit =
+                game.ballVX < 0 &&
+                game.ballX - game.ballRadius <= leftX &&
+                game.ballX + game.ballRadius >= paddleInset &&
+                Math.abs(game.ballY - game.leftY) <= getPaddleHeight('left') / 2 + game.ballRadius;
+            const rightHit =
+                game.ballVX > 0 &&
+                game.ballX + game.ballRadius >= rightX &&
+                game.ballX - game.ballRadius <= width - paddleInset &&
+                Math.abs(game.ballY - game.rightY) <= getPaddleHeight('right') / 2 + game.ballRadius;
+
+            if (leftHit) {
+                game.ballX = leftX + game.ballRadius;
+                game.ballVX = Math.min(Math.abs(game.ballVX) * 1.04, 760);
+                game.ballVY += ((game.ballY - game.leftY) / (getPaddleHeight('left') / 2)) * 95;
+            } else if (rightHit) {
+                game.ballX = rightX - game.ballRadius;
+                game.ballVX = -Math.min(Math.abs(game.ballVX) * 1.04, 760);
+                game.ballVY += ((game.ballY - game.rightY) / (getPaddleHeight('right') / 2)) * 95;
+            }
+
+            if (game.ballX + game.ballRadius < 0) {
+                if (game.paddleEffects.left.shield) {
+                    game.paddleEffects.left.shield = false;
+                    resetBall(1);
+                    setPowerupMessage('Shield blocked a goal against the left player.');
+                    updateActiveEffects();
+                } else {
+                    awardPoint('right');
+                }
+            } else if (game.ballX - game.ballRadius > width) {
+                if (game.paddleEffects.right.shield) {
+                    game.paddleEffects.right.shield = false;
+                    resetBall(-1);
+                    setPowerupMessage('Shield blocked a goal against the right player.');
+                    updateActiveEffects();
+                } else {
+                    awardPoint('left');
+                }
+            }
+        }
+
+        function gameLoop(now) {
+            if (game.status !== 'playing') return;
+
+            const delta = game.lastFrame
+                ? Math.min((now - game.lastFrame) / 1000, 0.035)
+                : 0;
+            game.lastFrame = now;
+            game.clock += delta;
+            updateTimedEffects();
+            movePaddles(delta);
+            updatePowerups();
+            updateBall(delta, now);
+            if (Math.floor(game.clock) !== game.lastEffectDisplay) updateActiveEffects();
+            draw();
+
+            if (game.status === 'playing') {
+                game.animationId = requestAnimationFrame(gameLoop);
+            } else {
+                game.animationId = null;
+            }
+        }
+
+        function stopLoop() {
+            if (game.animationId !== null) {
+                cancelAnimationFrame(game.animationId);
+                game.animationId = null;
+            }
+        }
+
+        function startOrResume() {
+            if (game.status !== 'ready' && game.status !== 'paused') return;
+            game.status = 'playing';
+            game.lastFrame = 0;
+            renderInterface();
+            game.animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function pauseGame() {
+            if (game.status !== 'playing') return;
+            game.status = 'paused';
+            stopLoop();
+            renderInterface();
+        }
+
+        function restartMatch() {
+            stopLoop();
+            game.leftScore = 0;
+            game.rightScore = 0;
+            game.leftY = canvas.height / 2;
+            game.rightY = canvas.height / 2;
+            game.status = 'ready';
+            game.lastFrame = 0;
+            resetPowerups();
+            resetBall(Math.random() < 0.5 ? -1 : 1);
+            draw();
+            renderInterface();
+        }
+
+        function setMode(mode) {
+            if (game.mode === mode) return;
+            game.mode = mode;
+            restartMatch();
+        }
+
+        function movePaddleByButton(control) {
+            const step = 38;
+            if (control === 'left-up') game.leftY = limitPaddle(game.leftY - step, 'left');
+            if (control === 'left-down') game.leftY = limitPaddle(game.leftY + step, 'left');
+            if (control === 'right-up' && game.mode === 'two') {
+                game.rightY = limitPaddle(game.rightY - step, 'right');
+            }
+            if (control === 'right-down' && game.mode === 'two') {
+                game.rightY = limitPaddle(game.rightY + step, 'right');
+            }
+            draw();
+        }
+
+        elements.start.addEventListener('click', startOrResume);
+        elements.pause.addEventListener('click', pauseGame);
+        elements.restart.addEventListener('click', restartMatch);
+        elements.modeButtons.forEach(button => {
+            button.addEventListener('click', () => setMode(button.dataset.mode));
+        });
+
+        document.addEventListener('keydown', event => {
+            const key = event.key.toLowerCase();
+            const isGameKey = ['w', 's', 'arrowup', 'arrowdown', ' '].includes(key);
+            if (!isGameKey) return;
+
+            if (key === ' ' && event.target.tagName !== 'BUTTON') {
+                event.preventDefault();
+                if (game.status === 'playing') pauseGame();
+                else startOrResume();
+                return;
+            }
+
+            if (key !== ' ' && game.status === 'playing') {
+                event.preventDefault();
+                game.input.add(key);
+            }
+        });
+
+        document.addEventListener('keyup', event => {
+            game.input.delete(event.key.toLowerCase());
+        });
+
+        window.addEventListener('blur', () => game.input.clear());
+
+        document.querySelectorAll('.direction-button').forEach(button => {
+            const control = button.dataset.control;
+
+            button.addEventListener('pointerdown', event => {
+                event.preventDefault();
+                game.input.add(control);
+                button.setPointerCapture(event.pointerId);
+            });
+            button.addEventListener('pointerup', event => {
+                game.input.delete(control);
+                if (button.hasPointerCapture(event.pointerId)) {
+                    button.releasePointerCapture(event.pointerId);
+                }
+            });
+            button.addEventListener('pointercancel', () => game.input.delete(control));
+            button.addEventListener('lostpointercapture', () => game.input.delete(control));
+            button.addEventListener('click', event => {
+                if (event.detail === 0) movePaddleByButton(control);
+            });
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) pauseGame();
+        });
+
+        resetPowerups();
+        resetBall(1);
+        draw();
+        renderInterface();
+    </script>
+</body>
+</html>
